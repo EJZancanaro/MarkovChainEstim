@@ -85,7 +85,6 @@ def test_MLE_binary_state_space():
 def test_MLE_complicated():
     """
     Tests the asymptotic convergence of the MLE estimator for a more complicated MC
-    :return:
     """
     state_space = [0,1,2]
     true_matrix = pd.DataFrame(index = state_space, columns = state_space, dtype='float64')
@@ -120,3 +119,35 @@ def test_MLE_complicated():
     print(np.array(true_matrix))
 
     assert np.allclose(np.array(MLE_matrix), np.array(true_matrix), atol=1e-8, rtol= 0.05)
+
+def test_confidence_intervals() :
+    MChain = markovchain.MarkovChain()
+
+    state_space = ["A", "B", "C"]
+
+    p_matrix = pd.DataFrame(
+        index = state_space,
+        columns = state_space,
+        dtype= "float64"
+    )
+    p_matrix.loc["A","A"] = 1/3
+    p_matrix.loc["A","B"] = 1/3
+    p_matrix.loc["A","C"] = 1/3
+
+    p_matrix.loc["B","A"] = 1/2
+    p_matrix.loc["B","B"] = 1/2
+    p_matrix.loc["B","C"] = 0
+
+    p_matrix.loc["C","A"] = 0
+    p_matrix.loc["C","B"] = 1
+    p_matrix.loc["C","C"] = 0
+
+
+    MChain.sample_according_to_matrix(state_space=state_space, initial_state="A", matrix=p_matrix, n_samples=1000)
+
+    lower, upper = MChain.confidence_intervals(state_i="A", state_j="A", alpha=0.05, method="CHI2_Slutsky")
+
+    estimate = MChain.MLE_stationary().loc["A","A"]
+    print(f'Upper bound { upper }, estimate = { estimate } , lower bound { lower }')
+
+    assert (lower < estimate) and (estimate < upper)

@@ -1,10 +1,30 @@
+
+
 import numpy as np
 import pandas as pd
+import scipy.stats
 
 class MarkovChain():
     def __init__(self):
         self.states = []
         self.state_space = set([])
+
+    def sample_according_to_matrix(self, state_space, initial_state ,matrix, n_samples):
+        self.state_space = set(state_space)
+
+        assert matrix.shape[0] == len(state_space)
+        assert matrix.shape[1] == len(state_space)
+        assert initial_state in state_space
+        assert np.max(matrix)<=1 and np.min(matrix)>=0
+
+        current_state = initial_state
+        for time in range(n_samples):
+            probabilities_next_states = [probs for probs in matrix.loc[current_state, :]]
+
+            self.next_state(np.random.choice(a=state_space, p=probabilities_next_states))
+
+            current_state = self.states[-1]
+
     def next_state(self, element):
         """
         Add a new sample to the Markov Chain
@@ -21,9 +41,7 @@ class MarkovChain():
 
     def MLE_stationary(self):
         """Maximum likelihood estimator of p_{i,j} for all i and j in the state space"""
-
-        length_of_chain = len(self.states)
-        state_dimension = len(self.state_space)
+        assert self.states is not []
 
         # Initialize the matrix ; and the array storing the n_i^* = \sum_t\sum_j n_{i,j}(t)
         transition_matrix_estimate = pd.DataFrame(
@@ -50,4 +68,38 @@ class MarkovChain():
             for state_2 in self.state_space:
                 transition_matrix_estimate.loc[state_1, state_2] /= counts_of_starting_state[state_1]
 
+
         return transition_matrix_estimate
+
+    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='CHI2'):
+        """Gives a confidence intervals for p_{i,j}"""
+        assert self.states is not []
+        assert method in ['CHI2', 'CHI2_Slutsky']
+
+        MLE_matrix = self.MLE_stationary()
+
+        dim = len(self.state_space)
+
+        counts_of_starting_state = pd.Series(0, index=list(self.state_space), dtype='int')
+
+        for current_state in self.states[:-1]:
+            counts_of_starting_state[current_state]+=1
+
+        quantile = scipy.stats.chi2.ppf(q=1-alpha, df=dim-1)
+
+
+        if method == 'CHI2' :
+            lower_bound = (
+                    2*MLE_matrix.loc[state_i, state_j]+quantile/(counts_of_starting_state[state_i])
+                    - np.sqrt( (4*MLE_matrix.loc[state_i, state_j] + quantile/(counts_of_starting_state[state_i]) )* quantile/(counts_of_starting_state[state_i]))
+            )/2
+
+            upper_bound = (
+                    2*MLE_matrix.loc[state_i, state_j]+quantile/(counts_of_starting_state[state_i])
+                    + np.sqrt( (4*MLE_matrix.loc[state_i, state_j] + quantile/(counts_of_starting_state[state_i]) )* quantile/(counts_of_starting_state[state_i]))
+            )/2
+        elif method=='CHI2_Slutsky' : #still in development
+            lower_bound = MLE_matrix.loc[state_i,state_j] - np.sqrt(MLE_matrix.loc[state_i,state_j]*quantile/counts_of_starting_state[state_i])
+
+            upper_bound = MLE_matrix.loc[state_i,state_j] + np.sqrt(MLE_matrix.loc[state_i,state_j]*quantile/counts_of_starting_state[state_i])
+        return (lower_bound, upper_bound)
