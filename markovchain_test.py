@@ -145,9 +145,9 @@ def test_confidence_intervals() :
 
     MChain.sample_according_to_matrix(state_space=state_space, initial_state="A", matrix=p_matrix, n_samples=1000)
 
-    for method in ['BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2'] :
+    for method in ['BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2', 'Gaussian'] :
 
-        lower, upper = MChain.confidence_intervals(state_i="A", state_j="A", alpha=0.05, method="BasicChi2")
+        lower, upper = MChain.confidence_intervals(state_i="A", state_j="A", alpha=0.05, method=method)
 
         estimate = MChain.MLE_stationary().loc["A","A"]
         print(f'METHOD : {method}')

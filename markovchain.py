@@ -74,7 +74,8 @@ class MarkovChain():
     def confidence_intervals(self, state_i, state_j, alpha=0.05, method='BasicChi2'):
         """Gives a confidence intervals for p_{i,j}"""
         assert self.states is not []
-        assert method in ['BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
+
+        assert method in ['Gaussian','BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
 
         MLE_matrix = self.MLE_stationary()
 
@@ -85,7 +86,23 @@ class MarkovChain():
         for current_state in self.states[:-1]:
             counts_of_starting_state[current_state]+=1
 
-        #Methods that use Chi2(dim-1) asymptotic law
+
+        if method=='Gaussian':
+
+            #computing gamma
+            quantile = scipy.stats.norm.ppf(alpha)
+
+            A = MLE_matrix.to_numpy()
+            matrix = sum([np.linalg.matrix_power(A,t-1) for t in range(1,len(self.states))]) # TODO can be optimised with dynamic programming
+            matrix = pd.DataFrame(matrix, index=MLE_matrix.index, columns=MLE_matrix.columns)
+            phi_i = matrix.loc[self.states[0], state_i]
+
+            gamma = quantile**2/(counts_of_starting_state[state_i]*phi_i)
+
+
+            lower_bound = MLE_matrix.loc[state_i, state_j]*(1+gamma)
+            upper_bound = MLE_matrix.loc[state_i, state_j]*(1+gamma) + 2*gamma*(1+gamma)
+
         if method in ['BasicChi2', 'BasicSlutskyChi2']:
             quantile = scipy.stats.chi2.ppf(q=1 - alpha, df=dim - 1)
         elif method in ['FreerChi2', 'FreerSlutskyChi2' ] : #still in development
