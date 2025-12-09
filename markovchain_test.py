@@ -145,9 +145,12 @@ def test_confidence_intervals() :
 
     MChain.sample_according_to_matrix(state_space=state_space, initial_state="A", matrix=p_matrix, n_samples=1000)
 
-    lower, upper = MChain.confidence_intervals(state_i="A", state_j="A", alpha=0.05, method="CHI2_Slutsky")
+    for method in ['BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2'] :
 
-    estimate = MChain.MLE_stationary().loc["A","A"]
-    print(f'Upper bound { upper }, estimate = { estimate } , lower bound { lower }')
+        lower, upper = MChain.confidence_intervals(state_i="A", state_j="A", alpha=0.05, method="BasicChi2")
 
-    assert (lower < estimate) and (estimate < upper)
+        estimate = MChain.MLE_stationary().loc["A","A"]
+        print(f'METHOD : {method}')
+        print(f'Upper bound { upper }, estimate = { estimate } , lower bound { lower }')
+
+        assert (lower < estimate) and (estimate < upper)

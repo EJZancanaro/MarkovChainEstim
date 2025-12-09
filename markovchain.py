@@ -71,10 +71,10 @@ class MarkovChain():
 
         return transition_matrix_estimate
 
-    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='CHI2'):
+    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='BasicChi2'):
         """Gives a confidence intervals for p_{i,j}"""
         assert self.states is not []
-        assert method in ['CHI2', 'CHI2_Slutsky']
+        assert method in ['BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
 
         MLE_matrix = self.MLE_stationary()
 
@@ -85,10 +85,13 @@ class MarkovChain():
         for current_state in self.states[:-1]:
             counts_of_starting_state[current_state]+=1
 
-        quantile = scipy.stats.chi2.ppf(q=1-alpha, df=dim-1)
+        #Methods that use Chi2(dim-1) asymptotic law
+        if method in ['BasicChi2', 'BasicSlutskyChi2']:
+            quantile = scipy.stats.chi2.ppf(q=1 - alpha, df=dim - 1)
+        elif method in ['FreerChi2', 'FreerSlutskyChi2' ] : #still in development
+            quantile = scipy.stats.chi2.ppf(q=1 - alpha, df=dim*(dim - 1))
 
-
-        if method == 'CHI2' :
+        if method in ['BasicChi2', 'FreerChi2'] :
             lower_bound = (
                     2*MLE_matrix.loc[state_i, state_j]+quantile/(counts_of_starting_state[state_i])
                     - np.sqrt( (4*MLE_matrix.loc[state_i, state_j] + quantile/(counts_of_starting_state[state_i]) )* quantile/(counts_of_starting_state[state_i]))
@@ -98,8 +101,11 @@ class MarkovChain():
                     2*MLE_matrix.loc[state_i, state_j]+quantile/(counts_of_starting_state[state_i])
                     + np.sqrt( (4*MLE_matrix.loc[state_i, state_j] + quantile/(counts_of_starting_state[state_i]) )* quantile/(counts_of_starting_state[state_i]))
             )/2
-        elif method=='CHI2_Slutsky' : #still in development
-            lower_bound = MLE_matrix.loc[state_i,state_j] - np.sqrt(MLE_matrix.loc[state_i,state_j]*quantile/counts_of_starting_state[state_i])
+        elif method in ['BasicSlutskyChi2', 'FreerSlutskyChi2']:
+            lower_bound = MLE_matrix.loc[state_i, state_j] - np.sqrt(
+                MLE_matrix.loc[state_i, state_j] * quantile / counts_of_starting_state[state_i])
 
-            upper_bound = MLE_matrix.loc[state_i,state_j] + np.sqrt(MLE_matrix.loc[state_i,state_j]*quantile/counts_of_starting_state[state_i])
+            upper_bound = MLE_matrix.loc[state_i, state_j] + np.sqrt(
+                MLE_matrix.loc[state_i, state_j] * quantile / counts_of_starting_state[state_i])
+
         return (lower_bound, upper_bound)
