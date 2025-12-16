@@ -82,6 +82,13 @@ def test_MLE_binary_state_space():
     assert transition_matrix_estimate[1][0] == 1
     assert transition_matrix_estimate[1][1] == 0
 
+    print("Test failed because the sum of estimated probabilities isn't close enough to one")
+    print("MLE matrix: ", np.array(transition_matrix_estimate))
+    print("Vector of sums over rows: ", np.sum(np.array(transition_matrix_estimate), axis=1))
+    assert np.allclose(np.sum(np.array(transition_matrix_estimate), axis=1),
+                       np.ones(len(MChain.state_space)),
+                       atol=1e-8, rtol=0.05)
+
 def test_MLE_complicated():
     """
     Tests the asymptotic convergence of the MLE estimator for a more complicated MC
@@ -119,7 +126,13 @@ def test_MLE_complicated():
     print(np.array(true_matrix))
 
     assert np.allclose(np.array(MLE_matrix), np.array(true_matrix), atol=1e-8, rtol= 0.05)
-    #TODO do they sum to one
+
+    print("Test failed because the sum of estimated probabilities isn't close enough to one")
+    print("MLE matrix: ",np.array(MLE_matrix))
+    print("Vector of sums over rows: ", np.sum(np.array(MLE_matrix), axis=1))
+    assert np.allclose( np.sum(np.array(MLE_matrix), axis=1) ,
+                        np.ones(len(MChain.state_space)),
+                        atol=1e-8, rtol= 0.05 )
 
 def test_confidence_intervals() :
     MChain = markovchain.MarkovChain()
