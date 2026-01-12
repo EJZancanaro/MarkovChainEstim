@@ -10,6 +10,8 @@ if __name__=='__main__' :
 
     list_lower_matrices = pd.DataFrame(index=LIST_METHODS)
     list_upper_matrices = pd.DataFrame(index=LIST_METHODS)
+
+    difference_matrices = pd.DataFrame(index=LIST_METHODS)
     for method in LIST_METHODS :
         MC = markovchain.MarkovChain()
 
@@ -21,7 +23,8 @@ if __name__=='__main__' :
 
         true_matrix = pd.DataFrame(np_true_matrix,index = state_space, columns = state_space, dtype='float64')
 
-        MC.sample_according_to_matrix(initial_state="A", matrix=true_matrix, state_space = state_space, n_samples=1000)
+        n_samples=1000
+        MC.sample_according_to_matrix(initial_state="A", matrix=true_matrix, state_space = state_space, n_samples=n_samples)
 
         upper_matrix = pd.DataFrame(index = state_space, columns = state_space, dtype='float64')
         lower_matrix = pd.DataFrame(index = state_space, columns = state_space, dtype='float64')
@@ -36,4 +39,7 @@ if __name__=='__main__' :
         print(f"Matrix of upper bounds \n{upper_matrix}")
         list_upper_matrices.loc[method] = upper_matrix
 
-
+    for method in LIST_METHODS :
+        difference_matrices.loc[method] = list_upper_matrices.loc[method] - list_lower_matrices.loc[method]
+    best_method = np.argmin(np.linalg.norm(difference_matrices.loc[method], np.inf) for method in LIST_METHODS)
+    print(LIST_METHODS[best_method])
