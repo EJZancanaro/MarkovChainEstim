@@ -39,8 +39,11 @@ class MarkovChain():
     def __print__(self):
         print(f"State space: {self.state_space} \n Unbroken chain:{self.states}")
 
-    def MLE_stationary(self):
-        """Maximum likelihood estimator of p_{i,j} for all i and j in the state space"""
+    def MLE_stationary(self, fail_at_missing_transitions=False):
+        """Maximum likelihood estimator of p_{i,j} for all i and j in the state space
+
+        fail_at_missing_transitions: If set to False, the estimator of the probability of an event that never happened is set to 0. Otherwise, the program crashes.
+        """
         assert self.states is not []
 
         # Initialize the matrix ; and the array storing the n_i^* = \sum_t\sum_j n_{i,j}(t)
@@ -66,13 +69,22 @@ class MarkovChain():
         #normalise them by the n_i^* as to get probabilities
         for state_1 in self.state_space:
             for state_2 in self.state_space:
-                transition_matrix_estimate.loc[state_1, state_2] /= counts_of_starting_state[state_1]
-
-
+                if counts_of_starting_state[state_1]!=0:
+                    transition_matrix_estimate.loc[state_1, state_2] /= counts_of_starting_state[state_1]
+                else:
+                    if not fail_at_missing_transitions:
+                        transition_matrix_estimate.loc[state_1, state_2]=0
+                    else:
+                        raise AssertionError("Tried to estimate the probability of an event that was never witnessed, while having set the fail_at_missing_transitions flag to True")
         return transition_matrix_estimate
 
-    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='BasicChi2'):
-        """Gives a confidence intervals for p_{i,j}"""
+    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='BasicChi2', avoid_trivial='True'):
+        """Gives a confidence intervals for p_{i,j}
+
+        :param state_i:
+
+        :param avoid_trivial:whether lower bounds smaller than 0 should be put to 0, upper bounds larger than 1 should be put to 1, and whether CI for probabilities of non-measured transitions should be defined as [0,1]
+        """
         assert self.states is not []
 
         assert method in ['Gaussian', 'GaussianSlutsky' ,'BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
@@ -86,6 +98,11 @@ class MarkovChain():
         for current_state in self.states[:-1]:
             counts_of_starting_state[current_state]+=1
 
+        if counts_of_starting_state[state_i] == 0:
+            if avoid_trivial:
+                return (0,1)
+            else:
+                return (np.nan, np.nan) #No method can estimate confidence intervals without any measures
 
         if method in ['Gaussian', 'GaussianSlutsky']:
 
@@ -97,15 +114,22 @@ class MarkovChain():
             matrix = pd.DataFrame(matrix, index=MLE_matrix.index, columns=MLE_matrix.columns)
             phi_i = matrix.loc[self.states[0], state_i]
 
-            gamma = quantile**2/(counts_of_starting_state[state_i]*phi_i)
+            if phi_i==0 :
+                if avoid_trivial:
+                    return (0,1)
+                else:
+                    return (np.nan, np.nan)
 
+            gamma = quantile**2/(counts_of_starting_state[state_i]*phi_i)
 
             if method=='Gaussian' :
                 lower_bound = MLE_matrix.loc[state_i, state_j]*(1+gamma) + gamma*(1+gamma)/2 - (1+gamma) * np.sqrt(gamma*MLE_matrix.loc[state_i, state_j]*(1-MLE_matrix.loc[state_i, state_j])+gamma**2/4)
                 upper_bound =MLE_matrix.loc[state_i, state_j]*(1+gamma) + gamma*(1+gamma)/2 + (1+gamma) * np.sqrt(gamma*MLE_matrix.loc[state_i, state_j]*(1-MLE_matrix.loc[state_i, state_j])+gamma**2/4)
+
             elif method=='GaussianSlutsky':
                 lower_bound = MLE_matrix.loc[state_i, state_j] - np.sqrt(MLE_matrix.loc[state_i,state_j]*(1-MLE_matrix.loc[state_i, state_j])*gamma)
                 upper_bound = MLE_matrix.loc[state_i, state_j] + np.sqrt(MLE_matrix.loc[state_i, state_j] * (1 - MLE_matrix.loc[state_i, state_j]) * gamma)
+
         if method in ['BasicChi2', 'BasicSlutskyChi2']:
             quantile = scipy.stats.chi2.ppf(q=1 - alpha, df=dim - 1)
         elif method in ['FreerChi2', 'FreerSlutskyChi2' ] : #still in development
@@ -128,4 +152,13 @@ class MarkovChain():
             upper_bound = MLE_matrix.loc[state_i, state_j] + np.sqrt(
                 MLE_matrix.loc[state_i, state_j] * quantile / counts_of_starting_state[state_i])
 
+        if avoid_trivial :
+            if lower_bound<0:
+                lower_bound = 0
+
+            if lower_bound>1 : #avoids the Gaussian method's problem of having lower bounds that are above 1 for extreme values of gamma
+                lower_bound=0
+
+            if upper_bound>1:
+                upper_bound = 1
         return (lower_bound, upper_bound)
