@@ -14,13 +14,6 @@ if __name__ == '__main__':
 
     LIST_METHODS = ['Gaussian', 'GaussianSlutsky', 'BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
 
-
-    #Stores all matrices of lower and of upper bounds, so one can individually check them if one wants
-    list_lower_matrices = pd.DataFrame(index=LIST_METHODS)
-    list_upper_matrices = pd.DataFrame(index=LIST_METHODS)
-
-    difference_matrices = pd.DataFrame(index=LIST_METHODS)
-
     MC = markovchain.MarkovChain()
 
     state_space = ["A", "B", "C"]
@@ -56,8 +49,6 @@ if __name__ == '__main__':
     MC.sample_according_to_matrix(initial_state="A", matrix=true_matrix, state_space=state_space,
                                   n_samples=n_samples)
 
-
-    print(MC.states)
     #Figure for the largest confidence interval plots
     plt.figure(0)
     plt.title("Convergence of largest confidence interval length per method")
@@ -65,6 +56,15 @@ if __name__ == '__main__':
     #FIgure for the smallest confidence interval plots
     plt.figure(1)
     plt.title("Convergence of smallest confidence interval length per method")
+
+    #Will serve to save results of the run for inspection
+    # Per-method, per-n storage
+    history_lower = {m: [] for m in LIST_METHODS}
+    history_upper = {m: [] for m in LIST_METHODS}
+    history_diff = {m: [] for m in LIST_METHODS}
+    history_max = {m: [] for m in LIST_METHODS}
+    history_min = {m: [] for m in LIST_METHODS}
+
     for method in LIST_METHODS:
         print("Current method", method)
 
@@ -94,17 +94,45 @@ if __name__ == '__main__':
             list_largest.append(np.max(upper_matrix-lower_matrix))
             #Plotting the smallest confidence intervals lengths
             list_smallest.append(np.min(upper_matrix-lower_matrix))
-
-        #Saving the final matrix for the given method, when taking into account the whole sample
-        list_lower_matrices.loc[method] = lower_matrix
-        list_upper_matrices.loc[method] = upper_matrix
-
-
-
+            #############################################
+            ##Section dedicated to saving the results in a file:
+            # Add subsample size as a column
+            lower_matrix_copy = lower_matrix.copy()
+            lower_matrix_copy["n"] = n
+            upper_matrix_copy = upper_matrix.copy()
+            upper_matrix_copy["n"] = n
+            # Correct diff: subtract the matrices BEFORE adding 'n' column
+            diff_matrix_copy = upper_matrix - lower_matrix
+            diff_matrix_copy["n"] = n
+            # Append to per-method storage lists
+            history_lower[method].append(lower_matrix_copy)
+            history_upper[method].append(upper_matrix_copy)
+            history_diff[method].append(diff_matrix_copy)
+            # Save max and min CI lengths for this subsample
+            history_max[method].append(np.max(diff_matrix_copy.drop(columns="n").to_numpy()))
+            history_min[method].append(np.min(diff_matrix_copy.drop(columns="n").to_numpy()))
+        #Plotting this method:
         plt.figure(0)
         plt.loglog(N_range, list_largest,label=method)
         plt.figure(1)
         plt.loglog(N_range, list_smallest,label=method)
+
+        ###########################################
+        #Saving in a file the results of this method
+        # Concatenate all subsample matrices into one
+        all_lower = pd.concat(history_lower[method])
+        all_upper = pd.concat(history_upper[method])
+        all_diff = pd.concat(history_diff[method])
+        # Save to one CSV per method
+        all_lower.to_csv(f"./benchmark_results/lower_{method}.csv", index=True)
+        all_upper.to_csv(f"./benchmark_results/upper_{method}.csv", index=True)
+        all_diff.to_csv(f"./benchmark_results/diff_{method}.csv", index=True)
+        summary = pd.DataFrame({
+            "n": N_range,
+            "max_length": history_max[method],
+            "min_length": history_min[method]
+        })
+        summary.to_csv(f"./benchmark_results/summary_{method}.csv", index=False)
 
     plt.figure(0)
     plt.xlabel("Size of the markov chain sample")
