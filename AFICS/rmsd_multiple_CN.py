@@ -1,8 +1,8 @@
 import numpy as np
 import csv
-import geometries
+from MarkovChain.AFICS import geometries
 import itertools
-
+from scipy.interpolate import CubicSpline
 
 class Trajectory ():
     def __init__(
@@ -27,7 +27,12 @@ class Trajectory ():
                     framesForRMSD=100,
                     idealGeos=[],
                     startFrame=None,
-                    endFrame=100000000
+                    endFrame=100000000,
+                    
+                    nbCN=[],
+                    idealGeos2=[],
+                    autres_frames=[],
+                    place_atome=[]
                     ):
         self.atoms = atoms              # array of atoms and their respective coordinates
         self.atomNum = atomNum          # number of atoms per frame
@@ -51,21 +56,56 @@ class Trajectory ():
         self.idealGeos = idealGeos      # array containing the ideal geometries
         self.startFrame = startFrame
         self.endFrame = endFrame
+        
+        
+        self.nbCN=nbCN
+        self.idealGeos2 = idealGeos2
+        self.autres_frames=autres_frames
+        self.place_atome=place_atome
 
     def getRMSDs(self):
         # [ ['geometry name', [[x,y,z],[x,y,z],...], ... ]
         print ('Calculating RMSDs... (this may take a while)')
         geoNames = []
+        geo_temp=[]
+        temp2=[]
+        
         for ideal in self.idealGeos:
-            geoNames.append(ideal[0])
-        self.RMSDs.append(geoNames)
+            
+            for i in range(len(ideal[1])):
+                    
+                geo_temp.append(ideal[1][i][0])
+            
+            temp2.append(ideal[0])
+            temp2.append(geo_temp.copy())
+            geoNames.append(temp2.copy())
+            temp2.clear()
+            geo_temp.clear()
+
+        nbcoor=0
+
         for i, frame in enumerate(self.thresholdAtoms):
             if (i % self.framesForRMSD == 0):
-                self.idealGeos = reorderIdealGeometries(frame, self.idealGeos)
+                for k,geopos in enumerate(self.idealGeos):
+                    
+                    if frame[0] == geopos[0]:
+                        self.idealGeos[k][1] = reorderIdealGeometries(frame[1], geopos[1])
             tempRMSDs = []
+            temp_frames=[]
             for ideal in self.idealGeos:
-                tempRMSDs.append(str(kabschRMSD(frame, ideal[1])))
-            self.RMSDs.append(tempRMSDs.copy())
+                if frame[0] == ideal[0]:
+                    for i in ideal[1]:
+                        tempRMSDs.append(str(kabschRMSD(frame[1], i[1])))
+                        nbcoor=ideal[0]
+            for names in geoNames:
+                if nbcoor == names[0]:
+                    temp_frames.append(names[1])
+                    
+            temp_frames.append(tempRMSDs.copy())
+            self.RMSDs.append(temp_frames.copy())
+            self.nbCN.append(frame[0])
+        print(len(self.RMSDs))
+        print("self.rmsd",self.RMSDs[1])
         print ('RMSDs done')
 
     def getAtoms(self, filename):
@@ -127,55 +167,115 @@ class Trajectory ():
         Format:
         [ [ [x, y, z], [x, y, z], ... ], ... ]
         '''
+        frames_cn=[]
+        frames_cn2=[]
+        
+        place=[]
         for i, frame in enumerate(self.atoms):
             frameAtoms = []
             ionCoords = []
             ionCount = 0
+
+            #Find the coordinates of the ion of interest among the class of ions we wish to study
             for atom in frame:
                 if atom[0] == self.ionID:
                     ionCount += 1
                     if self.whichIon == ionCount:
                         ionCoords = atom[1]
                         break
-            for atom in frame:
-                if (atom[0] in self.elements) and (dist_eq(atom[1], ionCoords) <= self.maxR):
+                    
+            # on parcourt tous les atomes de chaque frame, puis on garde dans frameAtoms
+            # ceux qui sont dans les éléments choisis et qui sont dans la 1ere sphère coordination
+
+            for compt,atom in enumerate(frame):
+                
+                if (atom[0] in self.elements) and (np.linalg.norm(np.array(atom[1]) - np.array(ionCoords),2) <= self.maxR):
                     frameAtoms.append(atom[1])
-            if (len(frameAtoms) == self.coorNum):
-                self.thresholdAtoms.append(frameAtoms.copy())
-                frameAtoms.clear()
-            else:
-                frameAtoms.clear()
-                self.missingFrames.append(i + self.startFrame)
-                print ('Frame '+str(i + self.startFrame)+' is excluded as its coordination number is different.')
-        self.thresholdAtoms = np.array(self.thresholdAtoms)
+                    place.append(atom[0])
+                    place.append(compt)
+                    place.append(i)
+                    self.place_atome.append(place.copy())
+                    place.clear()
+                    
+                
+                    
+            # on stocke dans thresholdAtoms les frames pour lesquelles on a le bon CN
+            # ie le bon nb d'atomes autour de l'ion 
+            #si c'est pas le cas on clear la liste on stocke dans missingFrames le numéro de la frame où y'a pas le bon CN
+            # on affihe le numero de ces frames
+            
+            frames_cn.append(len(frameAtoms))
+            frames_cn.append(np.array(frameAtoms.copy()))
+
+            # every thresholdAtoms[i] is list, whose 0th element contains the number of atoms of interest (i.e the coordination number for this frame),
+            # the next elements are the coordinates of those atoms of interest
+            self.thresholdAtoms.append(frames_cn.copy())
+
+            
+            frames_cn.clear()
         print ('First sphere atoms complete')
+        
+        
+        
+    def printPlace(self,filename):
+        # Nom du fichier CSV de sortie
+        
+        
+        # Écriture dans le fichier CSV
+        with open(filename+'-emplacement_atomes.csv', mode='w', newline='') as file:
+            writer = csv.writer(file)
+            
+            # Écriture de l'en-tête
+            writer.writerow(['Atome', 'Numéro de l\'atome', 'Frame'])
+            
+            # Écriture des données
+            writer.writerows(self.place_atome)
 
     def getDist(self):
         '''
         Calculates the maximum of the RDF to be used as the average distance
         in generating ideal structures
         '''
-        max = 0.0
-        maxIndex = 0
-        count = 0
-        breakCount = 0
-        for i, value in enumerate(self.rdf):		
-            if (value <= max) and (max != 0.0):
-                breakCount += 1
-            if (value > max):
-                max = value
-                maxIndex = i
-            if (breakCount > 5): # 5 seems to work well for break count with binSize 0.02 or larger, 10 works for binSize 0.01
-                self.dist = maxIndex*self.binSize
-                break
-            count += 1
+        
+        # on parcourt les valeurs de la rdf, on récupère la valeur de la rdf tant que la rdf
+        # est croissante et on récupère l'index a chaque fois
+        # quand la rdf commence a decroitre on incrémente breakcount jusqu'a 5
+
+        bin = self.binSize # bin size is not adjustable by user and is set at 0.05 A
+        r_max = 6.0 # the max the rdf will go to is 6 A
+        data_num = int(r_max / bin)
+        
+        x= np.arange(data_num)
+        x=x/(data_num/r_max)
+        spline = CubicSpline(x, self.rdf)
+        derivative = spline.derivative()
+        roots = derivative.roots()
+        
+        Max=0
+        
+        for i in roots:
+            if spline(i) > Max:
+                Max = spline(i)
+                max_ind=i
+        
+        
+        self.dist = max_ind
 
     def getMaxR(self):
         '''
         Calculates the maximum radius for determining atoms within the first coordination sphere and the coordination number
         '''
         breakCount = 0
+        # on parcourt les valeurs de l'intégrale de la rdf
         for i, value in enumerate(self.rdfIntegral):
+            
+            # on regarde uniquement les bins supérieurs au max de rdf (en abscisse)
+            # on commence sur la moitié "montée" de l'intégrale, dans cette phase on ne rentre dans aucune boucle if
+            # break count est alors egale à 0, une fois que la courbe se stabilise sur un bin break count prend la valeur 1
+            # puis si on a encore une légère variation <0.002 c'est stable, on est sur notre
+            # sur la fin de notre pic
+            # donc on récupère la valeur de l'intégrale de RDF qui est le CN et 
+            # maxR = maximum distance of atoms within the first coordination sphere
             if (i > (self.dist/self.binSize)):
                 if (value - self.rdfIntegral[i - 1] < 0.002) and (breakCount == 0):
                     breakCount +=1
@@ -211,8 +311,9 @@ class Trajectory ():
         '''
         Outputs RDF as .csv files
         '''
+        #print("adf",self.adf)
         ADFdict = {}
-        for i in range(180):
+        for i in range(181):
             ADFdict[i] = 0 # initializes 180 entries for adf histogram of bin size 1 degree
         for value in self.adf:
             ADFdict[int(np.floor(value))] += 1
@@ -221,33 +322,53 @@ class Trajectory ():
             adfwriter.writerow(['Angle', 'Count'])
             for key in ADFdict:
                 adfwriter.writerow([key, ADFdict[key]])
+                
+    
+    def printNbCN(self, filename):
+        with open(filename + '-Nbcoordination.csv', 'w', newline='') as csvfile:
+            nbCN_writer = csv.writer(csvfile)
+            nbCN_writer.writerow(['Coordination'])  # Header for the column
+            nbCN_writer.writerows(map(lambda x: [x], self.nbCN))
 
     def printRMSDs(self, filename):
         '''
-        Outputs RMSDs as a .csv file
+        Génère un fichier .csv contenant les RMSDs
         '''
-        with open(filename+'-RMSDs.csv', 'w') as rmsdfile:
+        # Récupère toutes les géométries idéales uniques
+        all_geometries = set()
+        for frame_data in self.RMSDs:
+            all_geometries.update(set(frame_data[0]))
+    
+        # Trie la liste des géométries idéales
+        sorted_geometries = sorted(list(all_geometries))
+    
+        # Ouvre le fichier CSV en mode écriture
+        with open(filename + '-RMSDs.csv', 'w') as rmsdfile:
+            # Crée un objet writer pour écrire dans le fichier CSV
             rmsdfwriter = csv.writer(rmsdfile)
-            rmsdfwriter.writerow(self.RMSDs[0])
-            RMSDs_float = np.array(self.RMSDs[1:], dtype=float)
-            avg = np.mean(RMSDs_float, axis=0)
-            stdDev = np.std(RMSDs_float, axis=0)
-            avgHeader = []
-            stdDevHeader = []
-            for value in avg:
-                avgHeader.append('Avg: '+str('{:.3f}'.format(value)))
-            for value in stdDev:
-                stdDevHeader.append('StdDev: '+str('{:.3f}'.format(value)))
-            rmsdfwriter.writerow(avgHeader)
-            rmsdfwriter.writerow(stdDevHeader)
-            rmsdfwriter.writerows(self.RMSDs[1:])
-
+    
+            # Écrit la première ligne du fichier CSV avec les noms de géométries idéales
+            rmsdfwriter.writerow([''] + sorted_geometries)
+    
+            # Parcourt les données pour chaque frame et écrit les lignes correspondantes dans le fichier CSV
+            for frame_data in self.RMSDs:
+                frame_row = ['']  # La première colonne de chaque ligne est laissée vide
+                rmsd_dict = dict(zip(frame_data[0], frame_data[1]))
+    
+                # Remplit les colonnes avec les valeurs RMSDs correspondantes ou 100 si la géométrie n'est pas présente
+                for geometry in sorted_geometries:
+                    #frame_row.append(rmsd_dict.get(geometry, 100))
+                    frame_row.append(rmsd_dict.get(geometry))
+    
+                # Écrit la ligne dans le fichier CSV
+                rmsdfwriter.writerow(frame_row)
+                    
+                
+    
     def outputIdealGeometries(self, subfolder=''):
-
-
         if len(subfolder):
             subfolder += '/'
-        for ideal in self.idealGeos:
+        for ideal in self.idealGeos2:
             header = [
                 [str(int(self.coorNum + 1))], # add 1 for the central 'ion'
                 ['CN='+str(int(self.coorNum))+': '+str(ideal[0])] # comment line of xyz says the geometry name
@@ -258,7 +379,8 @@ class Trajectory ():
                 csvwriter.writerow(['O 0.0 0.0 0.0'])
                 for row in ideal[1]:
                     csvwriter.writerow(['H '+str(row[0])+' '+str(row[1])+' '+str(row[2])])
-
+                    
+                    
     def getIonNum(self):
         '''
         Finds the total number of ions specified by the ionID per frame
@@ -318,69 +440,105 @@ class Trajectory ():
                         break
             for atom in frame:
                 if atom[0] in self.elements:
-                    frame_dist.append(dist_eq(ion_coords, atom[1]))
+                    frame_dist.append(np.linalg.norm(np.array(ion_coords) - np.array(atom[1]),2))
             distances.append(frame_dist.copy())
             frame_dist.clear()
+            
+            
         atom_B_tol_num = []
-        for frame in distances:
+
+        rdf_values = []
+        rdfint_values = []
+        for i, frame in enumerate(distances):
+            
+            
             tmp_dist_count = 0
             for distance in frame:
                 if distance <= r_max:
                     tmp_dist_count += 1
             atom_B_tol_num.append(tmp_dist_count)
+            
+            
+            density_B = atom_B_tol_num[i] / vol
+            tmp_rdfint_values = []
 
-        rdf_values = []
-        for i, frame in enumerate(distances):
             tmp_rdf_values = []
             for binNum in range(data_num):
                 num_B_r = 0.0
                 for distance in frame:
+                    
                     if (distance >= binNum*bin) and (distance < (binNum + 1)*bin):
                         num_B_r += 1
                 tmp_rdf_values.append(1.0 / (density_A*atom_B_tol_num[i])*num_B_r / (4.0*np.pi*(binNum + 1)**2 * bin**3))
-            rdf_values.append(tmp_rdf_values.copy())
-            tmp_rdf_values.clear()
-
-        rdfint_values = []
-        for i, frame in enumerate(rdf_values):
-            density_B = atom_B_tol_num[i] / vol
-            tmp_rdfint_values = []
-            for j in range(data_num):
+                
                 sum_int = 0.0
-                for k in range(j):
-                    sum_int += 4*np.pi*density_B*((k + 1)*bin)**2 * frame[k]*bin
+                for k in range(binNum):
+                    
+                    sum_int += 4*np.pi*density_B*((k + 1)*bin)**2 * tmp_rdf_values[k]*bin
                 tmp_rdfint_values.append(sum_int)
             rdfint_values.append(tmp_rdfint_values.copy())
             tmp_rdfint_values.clear()
+            
+            rdf_values.append(tmp_rdf_values.copy())
+            tmp_rdf_values.clear()
 
 
+     
+       
         for i in range(data_num):
-            sum = 0.0
+            sum1 = 0.0
+            sum2 = 0.0
             for j in range(len(rdfint_values)):
-                sum += rdfint_values[j][i]
-            self.rdfIntegral.append(sum / self.frameCount)
-        
-        for i in range(data_num):
-            sum = 0.0
+                sum1 += rdfint_values[j][i]
+            self.rdfIntegral.append(sum1 / self.frameCount)
             for j in range(len(rdf_values)):
-                sum += rdf_values[j][i]
-            self.rdf.append(sum / self.frameCount)
+                sum2 += rdf_values[j][i]
+            self.rdf.append(sum2 / self.frameCount)
         print ('RDF complete')
+        
+        
+        
+        
 
     def getADF(self):
         '''
         Calculates the ADF for the treshold atoms in each frame
         '''
+        
         for frame in self.thresholdAtoms:
+            
             # center each frame using centroid
-            frame -= centroid(frame)
-            for i in range(len(frame) - 1):
-                for j in range(i + 1, len(frame)):
-                    self.adf.append(angle_eq(frame[i], frame[j]))
+            frame[1] -= centroid(frame[1])
+            for i in range(len(frame[1]) - 1):
+                for j in range(i + 1, len(frame[1])):
+                    self.adf.append(angle_eq(frame[1][i], frame[1][j]))
+                    
+            
         print ('ADF complete')
+        
 
     def getIdealGeos(self):
-        self.idealGeos = geometries.idealGeometries(self.coorNum, self.dist)
+        cn_geo=[]
+        
+        list_cn=[]
+
+        #For every frame
+        for i,fr in enumerate(self.thresholdAtoms):
+            #every thresholdAtoms[i] is list, whose 0th element contains the number of atoms of interest (i.e the coordination number for this frame),
+            # the next elements are the coordinates of those atoms of interest
+
+            if self.thresholdAtoms[i][0] not in list_cn:
+                list_cn.append(self.thresholdAtoms[i][0])
+        #val_cn now contains all values the coordination number takes (with unique elements)
+        for i,val_cn in enumerate(list_cn):
+
+            cn_geo.append(val_cn)
+            cn_geo.append(geometries.idealGeometries(val_cn, self.dist))
+            # every element of idealGeos will have val_cn and a list of the possible ideal geometries for that value of coordination number
+            self.idealGeos.append(cn_geo.copy())
+            cn_geo.clear()
+            
+        self.idealGeos2 = geometries.idealGeometries(self.coorNum, self.dist)
 
     def checkWithUser(self):
         print ('Do the following look OK?')
