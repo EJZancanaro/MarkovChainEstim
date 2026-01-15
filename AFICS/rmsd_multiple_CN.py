@@ -105,8 +105,6 @@ class Trajectory ():
             temp_frames.append(tempRMSDs.copy())
             self.RMSDs.append(temp_frames.copy())
             self.nbCN.append(frame[0])
-        print(len(self.RMSDs))
-        print("self.rmsd",self.RMSDs[1])
         print ('RMSDs done')
 
     def getAtoms(self, filename):
