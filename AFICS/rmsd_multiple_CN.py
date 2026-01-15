@@ -3,6 +3,7 @@ import csv
 from MarkovChain.AFICS import geometries
 import itertools
 from scipy.interpolate import CubicSpline
+import os
 
 class Trajectory ():
     def __init__(
@@ -362,25 +363,32 @@ class Trajectory ():
     
                 # Écrit la ligne dans le fichier CSV
                 rmsdfwriter.writerow(frame_row)
-                    
-                
-    
+
     def outputIdealGeometries(self, subfolder=''):
-        if len(subfolder):
-            subfolder += '/'
-        for ideal in self.idealGeos2:
-            header = [
-                [str(int(self.coorNum + 1))], # add 1 for the central 'ion'
-                ['CN='+str(int(self.coorNum))+': '+str(ideal[0])] # comment line of xyz says the geometry name
-            ]
-            with open ('./'+str(subfolder)+str(ideal[0])+'.xyz', 'w') as file:
-                csvwriter = csv.writer(file)
-                csvwriter.writerows(header)
-                csvwriter.writerow(['O 0.0 0.0 0.0'])
-                for row in ideal[1]:
-                    csvwriter.writerow(['H '+str(row[0])+' '+str(row[1])+' '+str(row[2])])
-                    
-                    
+        import os
+        if len(subfolder) and not os.path.exists(subfolder):
+            os.makedirs(subfolder)
+
+        # Iterate through the Union we built in getIdealGeos
+        for cn_entry in self.idealGeos:
+            current_cn = cn_entry[0]
+            geos_for_this_cn = cn_entry[1]
+
+            for ideal in geos_for_this_cn:
+                name = ideal[0]
+                coords = ideal[1]
+                # Header must match the actual number of atoms in THIS geometry
+                header = [
+                    [str(len(coords) + 1)],
+                    [f"CN={current_cn}: {name}"]
+                ]
+                path = os.path.join(subfolder, f"CN{current_cn}_{name}.xyz")
+                with open(path, 'w') as f:
+                    csvwriter = csv.writer(f)
+                    csvwriter.writerows(header)
+                    csvwriter.writerow(['O 0.0 0.0 0.0'])  # Ion
+                    for row in coords:
+                        csvwriter.writerow(['H ' + str(row[0]) + ' ' + str(row[1]) + ' ' + str(row[2])])
     def getIonNum(self):
         '''
         Finds the total number of ions specified by the ionID per frame
@@ -518,6 +526,9 @@ class Trajectory ():
         
 
     def getIdealGeos(self):
+        if len(self.idealGeos)!=0:
+            exit("Fatal error: getIdealGeos was called multiple times.")
+
         cn_geo=[]
         
         list_cn=[]
@@ -531,14 +542,9 @@ class Trajectory ():
                 list_cn.append(self.thresholdAtoms[i][0])
         #val_cn now contains all values the coordination number takes (with unique elements)
         for i,val_cn in enumerate(list_cn):
-
-            cn_geo.append(val_cn)
-            cn_geo.append(geometries.idealGeometries(val_cn, self.dist))
             # every element of idealGeos will have val_cn and a list of the possible ideal geometries for that value of coordination number
-            self.idealGeos.append(cn_geo.copy())
-            cn_geo.clear()
-            
-        self.idealGeos2 = geometries.idealGeometries(self.coorNum, self.dist)
+            # [CN, [list_of_geometries]]
+            self.idealGeos.append([val_cn, geometries.idealGeometries(val_cn, self.dist)])
 
     def checkWithUser(self):
         print ('Do the following look OK?')

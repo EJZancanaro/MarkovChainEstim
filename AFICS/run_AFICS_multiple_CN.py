@@ -11,7 +11,7 @@ data_address='./data/CA_center_lbda60_soltip3_md10ns.xyz'
 outputFile = results_folder + prefix_output_files
 
 #DO NOT FORGET TO UPDATE ionID, elemtents, and endFrame in the following function
-traj = rmsd_multiple_CN.Trajectory(ionID='CA', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=101)
+traj = rmsd_multiple_CN.Trajectory(ionID='CA', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=1001)
 
 #Nothing to change below
 traj.getAtoms(data_address)
