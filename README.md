@@ -3,8 +3,13 @@ Tool for statistical estimation of parameters of sequences of values, supposed t
 
 A class called MarkovChain is the main object at play, and the methods are the novelties of the project. In particular the objective is to implement trustworthy confidence-interval estimation, with theoretical garanties.
 
+
 ## From AFICS to MarkovChains
-After generating an AFICS analysis of data thanks to "AFICS/run_AFICS.py", data will be stored in the "AFICS/data/" folder.
+
+Here we do not use the original AFICS, but a modified one that allows for taking into account ion-solvent systems with time-dependent coordination number.
+
+After generating a (modified) AFICS analysis of data thanks to "AFICS/run_AFICS_multiple_CN.py", data will be stored in the "AFICS/data/" folder (or any folder specified by the user in said file).
+
 Then, this data can be accessed by the "run_markov_from_AFICS.py" file. In that same file, an example of simple usage is implemented.
 
 ## Benchmarking the confidence interval methods

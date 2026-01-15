@@ -1,17 +1,17 @@
 import rmsd_multiple_CN
 
 #in what folder to store the results. Make sure the folder already exists.
-results_folder = "./results/Ca_water/"
+results_folder = "./results/Cr/"
 
 #Prefix_of_AFICS_output_files (not including geometry fitting)
-prefix_output_files="CA_water"
+prefix_output_files="Cr-water"
 
 #MD simulation data to analyse
-data_address='./data/CA_center_lbda60_soltip3_md10ns.xyz'
+data_address='./data/Cr-aqua.xyz'
 outputFile = results_folder + prefix_output_files
 
 #DO NOT FORGET TO UPDATE ionID, elemtents, and endFrame in the following function
-traj = rmsd_multiple_CN.Trajectory(ionID='CA', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=1001)
+traj = rmsd_multiple_CN.Trajectory(ionID='Cr', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=10000)
 
 #Nothing to change below
 traj.getAtoms(data_address)
@@ -33,5 +33,3 @@ traj.printRMSDs(outputFile)
 traj.outputIdealGeometries(results_folder)
 traj.printNbCN(outputFile) #Location name may be entered in string if user desires geometries to be written to subfolder instead of working directory 
 traj.printPlace(outputFile)
-
-print(traj.RMSDs)
