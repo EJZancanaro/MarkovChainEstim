@@ -16,9 +16,12 @@ class MarkovChain():
         assert matrix.shape[1] == len(state_space)
         assert initial_state in state_space
         assert np.max(matrix)<=1 and np.min(matrix)>=0
+        assert np.allclose(matrix.sum(axis=1), 1)
+
 
         current_state = initial_state
-        for time in range(n_samples):
+        self.next_state(initial_state)
+        for time in range(1,n_samples): #we generate n-1 samples, as the initial state is already one sample
             probabilities_next_states = [probs for probs in matrix.loc[current_state, :]]
 
             self.next_state(np.random.choice(a=state_space, p=probabilities_next_states))

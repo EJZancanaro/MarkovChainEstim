@@ -29,6 +29,44 @@ def test_sequential():
     assert MChain_numeric.state_space == {0,1,2}
     assert MChain_numeric.states == [0,1,0,2,1]
 
+def test_sample_according_to_matrix():
+
+    MC = markovchain.MarkovChain()
+    state_space = ["A", "B", "C"]
+    #Trivial Markov chain that always stays where it started
+    matrix = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+
+    #TEST The initial state is taken into account:
+    MC.sample_according_to_matrix(state_space=state_space , initial_state="A", matrix=matrix, n_samples=1)
+    assert MC.states == ["A"]
+    #TEST It works as supposed to for static cases
+    ##Starting at A
+    MC = markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space , initial_state="A", matrix=matrix, n_samples=100)
+    assert np.all(np.array(MC.states)==np.repeat("A", 100) )
+    ##Starting at B
+    MC = markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="B", matrix=matrix, n_samples=100)
+    assert np.all(np.array(MC.states) == np.repeat("B", 100))
+    ##Starting at C
+    MC = markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="C", matrix=matrix, n_samples=100)
+    assert np.all(np.array(MC.states) == np.repeat("C", 100))
+
+def test_sample_according_to_matrix_asymptotic():
+    MC = markovchain.MarkovChain()
+    state_space = ["A", "B", "C"]
+
+    matrix = np.array([[1/3, 1/3, 1/3], [1/3, 1/3, 1/3], [1/3, 1/3, 1/3]])
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="A", matrix=matrix, n_samples=100000)
+    matrix_estimate = MC.MLE_stationary()
+    print("Estimated matrix: \n", matrix_estimate)
+    print("True matrix: \n", matrix)
+    assert np.allclose(matrix_estimate, matrix, atol=1e-8, rtol= 0.05)
+
 def test_MLE_binary_state_space_simple():
     """Tests whether the transition probability matrix is estimated properly"""
 
