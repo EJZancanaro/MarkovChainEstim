@@ -29,18 +29,55 @@ def test_sequential():
     assert MChain_numeric.state_space == {0,1,2}
     assert MChain_numeric.states == [0,1,0,2,1]
 
-def test_sample_according_to_matrix():
+def test_sample_according_to_matrix_initial_states():
+    """Tests how the initial state behaves when generating a Markov chain through the a matrix"""
 
     MC = markovchain.MarkovChain()
     state_space = ["A", "B", "C"]
     #Trivial Markov chain that always stays where it started
-    matrix = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    matrix = np.array([[1,0,0],[0,1,0],[0,0,1]]) #this matrix won't even be used
     matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
-
     #TEST The initial state is taken into account:
     MC.sample_according_to_matrix(state_space=state_space , initial_state="A", matrix=matrix, n_samples=1)
     assert MC.states == ["A"]
+    MC = markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="B", matrix=matrix, n_samples=1)
+    assert MC.states == ["B"]
+    MC = markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="C", matrix=matrix, n_samples=1)
+    assert MC.states == ["C"]
+
+    #TEST Longer and but with another matrix
+    matrix = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+    ##Staring at A leads to B
+    MC=markovchain.MarkovChain()
+    MC.sample_according_to_matrix(state_space=state_space , initial_state="A", matrix=matrix, n_samples=2)
+    assert MC.states == ["A","B"]
+    ##Starting at B leads to C
+    MC = markovchain.MarkovChain()
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="B", matrix=matrix, n_samples=2)
+    assert MC.states == ["B","C"]
+    #Starting at C lead to A
+    MC = markovchain.MarkovChain()
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="C", matrix=matrix, n_samples=2)
+    assert MC.states == ["C", "A"]
+
+    #Size 3:
+    MC = markovchain.MarkovChain()
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
+    MC.sample_according_to_matrix(state_space=state_space, initial_state="A", matrix=matrix, n_samples=3)
+    assert MC.states == ["A", "B", "C"]
+
+def test_sample_according_to_matrix()  :
     #TEST It works as supposed to for static cases
+    #i.e Trivial Markov chain that always stays where it started
+    state_space = ["A", "B", "C"]
+
+    matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    matrix = pd.DataFrame(matrix, index=state_space, columns=state_space)
     ##Starting at A
     MC = markovchain.MarkovChain()
     MC.sample_according_to_matrix(state_space=state_space , initial_state="A", matrix=matrix, n_samples=100)
