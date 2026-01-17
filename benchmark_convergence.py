@@ -18,23 +18,22 @@ if __name__ == '__main__':
 
     state_space = ["A", "B", "C"]
 
-
-
     #P_1 matrix
+    np_true_matrix = np.array([[1 / 3, 1 / 2, 1 / 6],
+                               [1 / 3, 1 / 3, 1 / 3],
+                               [1 / 2,  1/4 , 1 / 4 ]])
+
+    #P_2 matrix
     #np_true_matrix = np.array([[1 / 3, 1 / 2, 1 / 6],
     #                           [1 / 2, 0, 1 / 2],
     #                           [0, 1, 0]])
-    #P_2 matrix
-    #np_true_matrix = np.array([[1 / 3, 1 / 2, 1 / 6],
-    #                           [1 / 3, 1 / 3, 1 / 3],
-    #                           [1 / 2,  1/4 , 1 / 4 ]])
 
     #P3 matrix
-    np_true_matrix = np.array([
-        [1 / 3, 1 / 3, 1 / 3],
-        [1 / 100, 99 / 100, 0],
-        [1 / 100, 0, 99 / 100]
-    ])
+    #np_true_matrix = np.array([
+    #    [1 / 3, 1 / 3, 1 / 3],
+    #    [1 / 100, 99 / 100, 0],
+    #    [1 / 100, 0, 99 / 100]
+    #])
 
     #P4 matrix
     #np_true_matrix = np.array([

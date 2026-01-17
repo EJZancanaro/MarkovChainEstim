@@ -13,9 +13,8 @@ outputFile = results_folder + prefix_output_files
 #DO NOT FORGET TO UPDATE ionID, elemtents, and endFrame in the following function
 traj = rmsd_multiple_CN.Trajectory(ionID='Cr', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=10000)
 
-#Nothing to change below
+#Nothing to change below this line
 traj.getAtoms(data_address)
-
 traj.getIonNum()
 if (traj.ionNum > 1): 
     traj.getWhichIon() 
