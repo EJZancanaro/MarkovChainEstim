@@ -81,7 +81,7 @@ class MarkovChain():
                         raise AssertionError("Tried to estimate the probability of an event that was never witnessed, while having set the fail_at_missing_transitions flag to True")
         return transition_matrix_estimate
 
-    def confidence_intervals(self, state_i, state_j, alpha=0.05, method='BasicChi2', avoid_trivial='True'):
+    def confidence_intervals(self, state_i, state_j, method ,alpha=0.05, avoid_trivial='True'):
         """Gives a confidence intervals for p_{i,j}
 
         :param state_i:
