@@ -22,7 +22,9 @@ def benchmark_from_AFICS(rmsd_file,
     trajectory = rmsd_df['Best geometry'].tolist()
 
     if len(trajectory) < size_largest_subsample:
-        exit(f"Error: The value of largest_subsample the user wishes to study is {size_largest_subsample}. This is larger than the size of the simulation {len(trajectory)}")
+        print(f"Warning: The value of largest_subsample the user wishes to study is {size_largest_subsample}. This is larger than the size of the simulation {len(trajectory)}")
+        size_largest_subsample = len(trajectory)
+        print(f"The value of size_largest_subsample has been reduced to {size_largest_subsample} " )
     MC = markovchain.MarkovChain()
 
     for element in trajectory:
