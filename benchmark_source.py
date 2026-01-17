@@ -114,10 +114,13 @@ def benchmark_source(MC, state_space,
     plt.ylabel("Largest confidence interval length among all pairs of states")
     plt.legend()
     plt.grid(True)
+    plt.savefig(os.path.join(adress_results, "largest.png"))
 
     plt.figure(1)
     plt.xlabel("Size of the markov chain sample")
     plt.ylabel("Smallest confidence interval length among all pairs of states")
     plt.legend()
     plt.grid(True)
+    plt.savefig(os.path.join(adress_results, "smallest.png"))
+
     plt.show()
