@@ -10,8 +10,19 @@ prefix_output_files="Cr-water"
 data_address='./data/Cr-aqua.xyz'
 outputFile = results_folder + prefix_output_files
 
+#Trajectory parameters
+
+ionID='Cr' #ion of interest's name in the .xyz file
+elements=['O'] # list of elements to be taken into account in the computations of RDF, ADF and CN.
+framesForRMSD=100 #number of frames a given ideal geometry is used for before reconsidering what the ideal geometry is
+binSize=0.02 #width of the histograms for approximating the RDF.
+startFrame=1 #In the .xyz file, what frame is the first to be taken into account
+endFrame=10000# In the .xys file, what frame is the last to be taken into account,
+                # this should be exactly equal to the number of frames in the simulation if one whishes to analyse with AFICS the entire simulation.
+
+
 #DO NOT FORGET TO UPDATE ionID, elemtents, and endFrame in the following function
-traj = rmsd_multiple_CN.Trajectory(ionID='Cr', elements=['O'], boxSize=12.42, framesForRMSD=100, binSize=0.02, startFrame=1, endFrame=10000)
+traj = rmsd_multiple_CN.Trajectory(ionID=ionID, elements=elements, boxSize=12.42, framesForRMSD=framesForRMSD, binSize=binSize, startFrame=startFrame, endFrame=endFrame)
 
 #Nothing to change below this line
 traj.getAtoms(data_address)
