@@ -24,6 +24,8 @@ You can then modify the parameters of run_AFICS_multiple_CN.py so that they fit 
 - endFrame: last frame of the .xyz file to be taken into account. Should equal the number of frames in the .xyz file if we wish to take into account the entire MD simulation.
 
 Executing the run_AFICS_multiple_CN.py file after choosing all these parameters outputs the AFICS realization into the folder written in the "results_folder" variable.
+
+The exact modifications applied to the original AFICS for our purposes are described at AFICS/modifications_in_AFICS.md
 ## From the (modified) AFICS to MarkovChains
 
 The RMSD.csv file output during previous step can then be fed into markov chains by executing
