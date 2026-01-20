@@ -23,13 +23,16 @@ def benchmark_source(MC, state_space,
     :list: LIST_METHODS: methods to be implemented. Must be a subset of ['Gaussian', 'GaussianSlutsky', 'BasicChi2', 'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2']
     """
 
+    #TODO this function is very slow, it should be a method of the Markovchain class and dynamically compute the estimations subsample by subsample, as the computations of the previous subsample allow for quicker computations of the new subsample
+
+
     # Figure for the largest confidence interval plots
     plt.figure(0)
-    plt.title("Convergence of largest confidence interval length per method")
+    plt.clf() #clears figure if this function has been called multiple times
 
     # FIgure for the smallest confidence interval plots
     plt.figure(1)
-    plt.title("Convergence of smallest confidence interval length per method")
+    plt.clf() #clears figure if this function has been called multiple times
 
     # Will serve to save results of the run for inspection
     # Per-method, per-n storage
