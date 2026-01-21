@@ -26,10 +26,7 @@ def benchmark_from_AFICS(rmsd_file,
         size_largest_subsample = len(trajectory)
         print(f"The value of size_largest_subsample has been reduced to {size_largest_subsample} " )
     MC = markovchain.MarkovChain()
-
-    for element in trajectory:
-       MC.next_state(element)
-    assert len(trajectory)==len(MC.states)
+    MC.load_rmsd_geometries(rmsd_file)
     state_space = np.array(list(MC.state_space))
 
     print("Benchmarking from an AFICS geometry trajectory started")

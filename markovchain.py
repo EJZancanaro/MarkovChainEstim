@@ -171,3 +171,15 @@ class MarkovChain():
             if upper_bound>1:
                 upper_bound = 1
         return (lower_bound, upper_bound)
+
+    def load_rmsd_geometries(self, rmsd_file):
+        """
+        From the RMSDs output of the (modified or not) AFICS, load the trajectory of the geometries into the MarkovChain object
+        :param rmsd_file: adress of the RMSDs output file
+        :return: None
+        """
+        rmsd_df = pd.read_csv(rmsd_file)  # where rmsd_file is the previously output file
+        rmsd_df['Best geometry'] = rmsd_df.idxmin(axis=1)
+        trajectory = rmsd_df['Best geometry'].tolist()
+        for element in trajectory:
+            self.next_state(element)
