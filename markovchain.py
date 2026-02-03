@@ -226,12 +226,21 @@ class MarkovChain():
 
 
 def compute_phi_from_MLE(A, size_chain):
-    n = size_chain
-    d = A.shape[0]
+    """
+    Dynamically computes the matrix necessary to obtaining phi, with dynamic Kahan style summations
 
-    power = np.eye(d)
+    """
+
+    d = A.shape[0]
+    power = np.eye(d, dtype=A.dtype)
     matrix = np.zeros_like(A)
-    for _ in range(n):
-        matrix += power
+    comp = np.zeros_like(A)  # compensation
+
+    for _ in range(size_chain):
+        y = power - comp
+        t = matrix + y
+        comp = (t - matrix) - y
+        matrix = t
         power = power @ A
+
     return matrix
