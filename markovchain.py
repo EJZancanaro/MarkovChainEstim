@@ -119,7 +119,10 @@ class MarkovChain():
             quantile = scipy.stats.norm.ppf(1-alpha/2)
 
             A = MLE_matrix.to_numpy()
-            matrix = sum([np.linalg.matrix_power(A,t-1) for t in range(1,len(self.states))]) # TODO can be optimised with dynamic programming
+            #We compute the matrix in linear time but the computation is equivalent to the following, which would be slow and introduce unnacceptably large numerical errors
+            #matrix = sum([np.linalg.matrix_power(A,t-1) for t in range(1,len(self.states))]) # TODO can be optimised with dynamic programming
+            matrix = compute_phi_from_MLE(A, size_chain=len(self.states))
+
             matrix = pd.DataFrame(matrix, index=MLE_matrix.index, columns=MLE_matrix.columns)
             phi_i = matrix.loc[self.states[0], state_i]
 
@@ -218,3 +221,17 @@ class MarkovChain():
         trajectory = rmsd_df['Best geometry'].tolist()
         for element in trajectory:
             self.next_state(element)
+
+
+
+
+def compute_phi_from_MLE(A, size_chain):
+    n = size_chain
+    d = A.shape[0]
+
+    power = np.eye(d)
+    matrix = np.zeros_like(A)
+    for _ in range(n):
+        matrix += power
+        power = power @ A
+    return matrix
