@@ -236,7 +236,7 @@ def compute_phi_from_MLE(A, size_chain):
     matrix = np.zeros_like(A)
     comp = np.zeros_like(A)  # compensation
 
-    for _ in range(size_chain):
+    for _ in range(size_chain-1):
         y = power - comp
         t = matrix + y
         comp = (t - matrix) - y
