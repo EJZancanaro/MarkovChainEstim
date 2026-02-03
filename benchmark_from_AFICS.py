@@ -17,13 +17,13 @@ def benchmark_from_AFICS(rmsd_file,
     All other parameters are defined in benchmark_source
     """
 
-    rmsd_df = pd.read_csv(rmsd_file)
-    rmsd_df['Best geometry'] = rmsd_df.idxmin(axis=1)
-    trajectory = rmsd_df['Best geometry'].tolist()
+    MC = markovchain.MarkovChain()
+    MC.load_rmsd_geometries(rmsd_file)
+    state_space = np.array(list(MC.state_space))
 
-    if len(trajectory) < size_largest_subsample:
-        print(f"Warning: The value of largest_subsample the user wishes to study is {size_largest_subsample}. This is larger than the size of the simulation {len(trajectory)}")
-        size_largest_subsample = len(trajectory)
+    if len(MC.states) < size_largest_subsample:
+        print(f"Warning: The value of largest_subsample the user wishes to study is {size_largest_subsample}. This is larger than the size of the simulation {len(MC.states)}")
+        size_largest_subsample = len(MC.states)
         print(f"The value of size_largest_subsample has been reduced to {size_largest_subsample} " )
     MC = markovchain.MarkovChain()
     MC.load_rmsd_geometries(rmsd_file)

@@ -85,7 +85,7 @@ class MarkovChain():
                         raise AssertionError("Tried to estimate the probability of an event that was never witnessed, while having set the fail_at_missing_transitions flag to True")
         return transition_matrix_estimate
 
-    def confidence_intervals(self, state_i, state_j, method ,alpha=0.05, avoid_trivial='True'):
+    def confidence_intervals(self, state_i, state_j, method ,alpha=0.05, avoid_trivial=True):
         """Gives a confidence intervals for p_{i,j}
 
         :param state_i: state from which the studied transition starts
@@ -170,11 +170,46 @@ class MarkovChain():
 
             if upper_bound>1:
                 upper_bound = 1
+
+        import math
+        if math.isnan(lower_bound) or math.isnan(upper_bound):
+            print("DANGER")
         return (lower_bound, upper_bound)
+
+    def confidence_interval_matrix(self, method, alpha=0.05, avoid_trivial=True):
+        """
+        Outputs a matrix for upper and lower bounds.
+        :param method:
+        :param alpha:
+        :param avoid_trivial:
+        :return: (Lower,Upper), the lower bounds matrix and the upper bounds matrix
+        """
+
+        Upper =  pd.DataFrame(
+            0,
+            index=list(self.state_space),
+            columns=list(self.state_space),
+            dtype='float64'
+        )
+
+        Lower = pd.DataFrame(
+            0,
+            index=list(self.state_space),
+            columns=list(self.state_space),
+            dtype='float64'
+        )
+        for state_i in list(self.state_space):
+            for state_j in list(self.state_space):
+                lower_bound, upper_bound = self.confidence_intervals(state_i,state_j, method=method,
+                                                                     alpha=alpha, avoid_trivial=avoid_trivial)
+                Upper.loc[state_i, state_j] = upper_bound
+                Lower.loc[state_i, state_j] = lower_bound
+        return (Lower,Upper)
+
 
     def load_rmsd_geometries(self, rmsd_file):
         """
-        From the RMSDs output of the (modified or not) AFICS, load the trajectory of the geometries into the MarkovChain object
+        From the RMSDs output of the (modified or not) AFICS, load the trajectory of the geometries into the MarkovChain object. This function is only useful for the geometry analysis usecase.
         :param rmsd_file: adress of the RMSDs output file
         :return: None
         """

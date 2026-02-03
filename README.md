@@ -30,19 +30,14 @@ The exact modifications applied to the original AFICS for our purposes are descr
 
 The RMSD.csv file output during previous step can then be fed into markov chains by executing
 ```python
-import pandas as pd
-import markovchain
-rmsd_df = pd.read_csv(rmsd_file) #where rmsd_file is the previously output file
-rmsd_df['Best geometry'] = rmsd_df.idxmin(axis=1)
-trajectory = rmsd_df['Best geometry'].tolist()
-MC = markovchain.MarkovChain()
-for element in trajectory:
-    MC.next_state(element)
+from markovchain import MarkovChain
+MC = MarkovChain()
+MC.load_rmsd_geometries(rmsd_file) #where rmsd file is the adress of the RMSDs output of the (modified or not) AFICS
 ```
 
-This instantiates a MarkovChain object with the ideal geometries of the molecular dynamics system.
+This instantiates a MarkovChain object (MC) with the ideal geometries of the molecular dynamics system.
 
-Examples of usage, specifically for benchmarking, are in the "run_markov_from_AFICS.py" file.
+From there, confidence interval computation and MLE estimation can be obtained by saving the output of the methods MC.MLE_stationary, MC.confidence_intervals(), and MC.confidence_interval_matrix()
 
 Further help on the implementation of the MarcovChain class can be found in the markovchain.py file.
 
@@ -56,4 +51,4 @@ run_markov_from_AFICS.py shows examples on how to use both benchmarking function
 
 ## Convergence for multiple RMSD data
 
-run_all_AFICS_data.py is specifically a file for launching this bencharking on multiple AFICS RMSDs results.
+run_all_AFICS_data.py is specifically a file for launching this bencharking on multiple AFICS RMSDs results for analysis of ion coordination spheres of multiples trajectories.
