@@ -1,23 +1,23 @@
 import rmsd_multiple_CN
 
 #in what folder to store the results. Make sure the folder already exists.
-results_folder = "./results/Cr/"
+results_folder = "./results/Ca_c27/"
 
 #Prefix_of_AFICS_output_files (not including geometry fitting)
-prefix_output_files="Cr-water"
+prefix_output_files="CA-water-c27"
 
 #MD simulation data to analyse
-data_address='./data/Cr-aqua.xyz'
+data_address='./data/calcium_c27_soltip3_md10ns_1000pts_centerCAL.xyz'
 outputFile = results_folder + prefix_output_files
 
 #Trajectory parameters
 
-ionID='Cr' #ion of interest's name in the .xyz file
+ionID='Ca' #ion of interest's name in the .xyz file
 elements=['O'] # list of elements to be taken into account in the computations of RDF, ADF and CN.
 framesForRMSD=100 #number of frames a given ideal geometry is used for before reconsidering what the ideal geometry is
 binSize=0.02 #width of the histograms for approximating the RDF.
 startFrame=1 #In the .xyz file, what frame is the first to be taken into account
-endFrame=10000# In the .xys file, what frame is the last to be taken into account,
+endFrame=1001# In the .xys file, what frame is the last to be taken into account,
                 # this should be exactly equal to the number of frames in the simulation if one whishes to analyse with AFICS the entire simulation.
 
 
