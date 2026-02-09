@@ -174,9 +174,13 @@ class MarkovChain():
             if upper_bound>1:
                 upper_bound = 1
 
-        import math
-        if avoid_trivial and (math.isnan(lower_bound) or math.isnan(upper_bound)):
-            exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE NAN EVEN THOUGH avoid_trivial was set to True ")
+        if avoid_trivial:
+            import math
+            if math.isnan(lower_bound) or math.isnan(upper_bound):
+                exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE NAN EVEN THOUGH avoid_trivial was set to True ")
+            if upper_bound<0 or lower_bound>1 or lower_bound<0 or upper_bound>1 :
+                exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE outside [0,1] avoid_trivial was set to True ")
+
         return (lower_bound, upper_bound)
 
     def confidence_interval_matrix(self, method, alpha=0.05, avoid_trivial=True):
