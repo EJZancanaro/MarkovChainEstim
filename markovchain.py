@@ -180,7 +180,8 @@ class MarkovChain():
                 exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE NAN EVEN THOUGH avoid_trivial was set to True ")
             if upper_bound<0 or lower_bound>1 or lower_bound<0 or upper_bound>1 :
                 exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE outside [0,1] avoid_trivial was set to True ")
-
+        if upper_bound-lower_bound < 0:
+            exit("Exiting: The lower_bound is larger than the upper_bound")
         return (lower_bound, upper_bound)
 
     def confidence_interval_matrix(self, method, alpha=0.05, avoid_trivial=True):
