@@ -1,6 +1,6 @@
 import numpy as np
 import csv
-from MarkovChain.AFICS import geometries
+import geometries
 import itertools
 from scipy.interpolate import CubicSpline
 import os
