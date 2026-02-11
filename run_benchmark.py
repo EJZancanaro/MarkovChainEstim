@@ -7,20 +7,20 @@ from benchmark_given_matrix import benchmark_given_matrix
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Benchmark confidence interval methods for Markov chains"
+        description="Benchmark confidence interval methods for Markov chains: for given subsamples, see how the lengths of the confidence intervals converge."
     )
 
     # General parameters
-    parser.add_argument("--size_smallest_subsample", type=int, default=1)
-    parser.add_argument("--step_of_subsampling", type=int, default=1)
-    parser.add_argument("--adress_results", required=True ,type=str)
+    parser.add_argument("--size_smallest_subsample", type=int, default=1, help="Size of smallest subsample used to obtain the confidence interval" )
+    parser.add_argument("--step_of_subsampling", type=int, default=1,help="Step of size increase of subsample for evaluation of the CIs")
+    parser.add_argument("--adress_results", required=True ,type=str, help="Where to store the results of the benchmarking, in case one whishes to analyze them.")
 
     parser.add_argument(
         "--methods",
         nargs="+",
         default=['Gaussian', 'GaussianSlutsky', 'BasicChi2',
                  'BasicSlutskyChi2', 'FreerChi2', 'FreerSlutskyChi2'],
-        help="List of CI methods"
+        help="List of CI estimation methods to be used"
     )
 
     # Mode selection
@@ -28,7 +28,7 @@ def parse_args():
         "--mode",
         choices=["matrix", "afics"],
         required=True,
-        help="Choose benchmark mode"
+        help="Choose benchmark mode: from an RMSD file or from a known theoretical Markov Chain matrix?"
     )
 
     # ===== Matrix mode arguments =====

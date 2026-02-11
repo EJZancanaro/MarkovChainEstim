@@ -3,8 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import scipy.stats
-from markovchain import compute_phi_from_MLE
-
 
 class DynamicMarkovBenchmark:
     """
