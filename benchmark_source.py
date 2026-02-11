@@ -1,5 +1,5 @@
 
-import ..markovchain
+import markovchain
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -50,9 +50,6 @@ def benchmark_source(MC, state_space,
         list_largest = []
         # For plotting smallest confidence interval length
         list_smallest = []
-
-        if size_smallest_subsample==1:
-            raise ValueError("The smallest subsample should be at least 2, and yet it is valued at ", size_smallest_subsample )
 
         N_range = np.arange(size_smallest_subsample,size_largest_subsample,step_of_subsampling)
 
@@ -136,9 +133,6 @@ def benchmark_dynamic(MC, state_space,
                      size_smallest_subsample, size_largest_subsample, step_of_subsampling,
                      adress_results,
                      LIST_METHODS):
-    if size_smallest_subsample == 1:
-        raise ValueError("The smallest subsample should be at least 2, and yet it is valued at ",
-                         size_smallest_subsample)
 
     benchmark_object=DynamicMarkovBenchmark(MC)
     benchmark_object.benchmark_dynamic(size_smallest_subsample,

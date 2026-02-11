@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import scipy.stats
+from markovchain import compute_phi_from_MLE
 
 class DynamicMarkovBenchmark:
     """
@@ -247,11 +248,14 @@ class DynamicMarkovBenchmark:
                 print(f"Evaluating at n={n} (transition {idx + 1}/{len(self.MC.states) - 1})")
 
                 # Update phi matrices for Gaussian methods if needed
-                # This is incremental: only adds new powers since last evaluation
                 if needs_gaussian:
-                    new_transitions = n - self.last_phi_update_n
-                    self.update_phi_matrices_incremental(new_transitions)
-                    self.last_phi_update_n = n
+                    # Recompute phi from scratch using current MLE (matches original behavior)
+                    # This avoids mixing powers of different MLE matrices
+                    A = self.get_MLE_matrix().to_numpy()
+
+                    # Import the function from markovchain module
+                    from markovchain import compute_phi_from_MLE
+                    self.A_powers_sum = compute_phi_from_MLE(A, size_chain=n)
 
                 # Compute confidence intervals for all methods
                 for method in LIST_METHODS:
@@ -262,6 +266,8 @@ class DynamicMarkovBenchmark:
                         index=self.state_space, columns=self.state_space, dtype='float64'
                     )
 
+                    # Compute CIs for ALL state pairs in the full state space
+                    # States with no visits will return (0,1) due to avoid_trivial=True
                     for state_i in self.state_space:
                         for state_j in self.state_space:
                             lb, ub = self.compute_confidence_interval(
@@ -283,8 +289,12 @@ class DynamicMarkovBenchmark:
                     history_lower[method].append(lower_copy)
                     history_upper[method].append(upper_copy)
                     history_diff[method].append(diff_copy)
-                    history_max[method].append(diff_matrix.max().max())
-                    history_min[method].append(diff_matrix.min().min())
+
+                    # Save max and min CI lengths - match original exactly
+                    # Original uses: np.max(diff_matrix_copy.drop(columns="n").to_numpy())
+                    diff_for_stats = diff_matrix.to_numpy()
+                    history_max[method].append(np.max(diff_for_stats))
+                    history_min[method].append(np.min(diff_for_stats))
 
         # Generate plots and save results
         self._generate_results(N_range, history_max, history_min,
@@ -294,7 +304,7 @@ class DynamicMarkovBenchmark:
     def _generate_results(self, N_range, history_max, history_min,
                           history_lower, history_upper, history_diff,
                           LIST_METHODS, adress_results):
-        """Generate plots and save CSV results."""
+        """Generate plots and save CSV results - matches original benchmark_source output exactly."""
 
         # Create plots
         plt.figure(0, figsize=(10, 6))
@@ -313,6 +323,10 @@ class DynamicMarkovBenchmark:
             all_upper.to_csv(os.path.join(adress_results, f"upper_{method}.csv"), index=True)
             all_diff.to_csv(os.path.join(adress_results, f"diff_{method}.csv"), index=True)
 
+            length_history = min(len(history_max[method]),len(history_min[method]))
+            if len(N_range)> length_history:
+                N_range=N_range[:length_history] #cut the subsample sizes that were not visited because the step was not an exact divisor of the length of the space to be explored
+
             # Summary CSV - EXACT same format as original benchmark_source
             summary = pd.DataFrame({
                 "n": N_range,
@@ -321,14 +335,7 @@ class DynamicMarkovBenchmark:
             })
             summary.to_csv(os.path.join(adress_results, f"summary_{method}.csv"), index=False)
 
-            # Handling what happens when not all subsample sizes programmed where done
-            # (for example if the step of subsample size was not a divisor of
-            # max_subsample_size - min_subsample_size)
-            length_history = min(len(history_max[method]) , len(history_min[method]))
-            if len(N_range)> length_history:
-                N_range = N_range[:length_history]
-
-            #Ploting
+            # Plot
             plt.figure(0)
             plt.loglog(N_range, history_max[method], label=method)
 
@@ -337,20 +344,19 @@ class DynamicMarkovBenchmark:
 
         # Finalize plots
         plt.figure(0)
-        plt.xlabel("Size of the Markov chain sample")
+        plt.xlabel("Size of the markov chain sample")
         plt.ylabel("Largest confidence interval length among all pairs of states")
         plt.legend()
         plt.grid(True)
-        plt.savefig(os.path.join(adress_results, "largest.png"), dpi=150)
+        plt.savefig(os.path.join(adress_results, "largest.png"))
 
         plt.figure(1)
-        plt.xlabel("Size of the Markov chain sample")
+        plt.xlabel("Size of the markov chain sample")
         plt.ylabel("Smallest confidence interval length among all pairs of states")
         plt.legend()
         plt.grid(True)
-        plt.savefig(os.path.join(adress_results, "smallest.png"), dpi=150)
+        plt.savefig(os.path.join(adress_results, "smallest.png"))
 
         plt.show()
 
         print(f"\nResults saved to {adress_results}")
-

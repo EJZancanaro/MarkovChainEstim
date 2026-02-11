@@ -7,11 +7,6 @@ benchmark confidence interval methods on a Markov chain.
 
 import numpy as np
 import pandas as pd
-import sys
-import os
-
-# Add the MarkovChain module to path if needed
-# sys.path.insert(0, '/path/to/MarkovChain')
 
 from dynamic_benchmark import DynamicMarkovBenchmark
 
