@@ -2,7 +2,7 @@ import markovchain
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from benchmark_source import benchmark_source
+from benchmark_source import benchmark_source, benchmark_dynamic
 
 #This benchmarking could have been made way faster by implementing a dynamic programming
 #approach to the computing of the confidence intervals, given that we are progressively revealing
@@ -34,7 +34,7 @@ def benchmark_from_AFICS(rmsd_file,
     print(f"State space of the Markov chain: {MC.state_space}")
     print(f"length of the trajectory: {len(MC.states)}")
 
-    benchmark_source(MC=MC, state_space=state_space,
+    benchmark_dynamic(MC=MC, state_space=state_space,
                      size_smallest_subsample=size_smallest_subsample,
                      size_largest_subsample=size_largest_subsample,
                      step_of_subsampling=step_of_subsampling,

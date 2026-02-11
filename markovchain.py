@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import scipy.stats
+import math
 
 class MarkovChain():
     def __init__(self):
@@ -157,6 +158,7 @@ class MarkovChain():
                     2*MLE_matrix.loc[state_i, state_j]+quantile/(counts_of_starting_state[state_i])
                     + np.sqrt( (4*MLE_matrix.loc[state_i, state_j] + quantile/(counts_of_starting_state[state_i]) )* quantile/(counts_of_starting_state[state_i]))
             )/2
+
         elif method in ['BasicSlutskyChi2', 'FreerSlutskyChi2']:
             lower_bound = MLE_matrix.loc[state_i, state_j] - np.sqrt(
                 MLE_matrix.loc[state_i, state_j] * quantile / counts_of_starting_state[state_i])
@@ -173,9 +175,12 @@ class MarkovChain():
 
             if upper_bound>1:
                 upper_bound = 1
+            if math.isnan(lower_bound):
+                lower_bound=0
+            if math.isnan(upper_bound):
+                upper_bound=1
 
         if avoid_trivial:
-            import math
             if math.isnan(lower_bound) or math.isnan(upper_bound):
                 exit("Exiting: LOWER BOUND OR UPPER BOUND FOUND TO BE NAN EVEN THOUGH avoid_trivial was set to True ")
             if upper_bound<0 or lower_bound>1 or lower_bound<0 or upper_bound>1 :
@@ -226,9 +231,6 @@ class MarkovChain():
         trajectory = rmsd_df['Best geometry'].tolist()
         for element in trajectory:
             self.next_state(element)
-
-
-
 
 def compute_phi_from_MLE(A, size_chain):
     """

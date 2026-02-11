@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from benchmark_source import benchmark_dynamic
 from benchmark_source import benchmark_source
 
 
@@ -25,7 +26,7 @@ def benchmark_given_matrix(np_true_matrix, state_space, initial_state, n_samples
     MC.sample_according_to_matrix(initial_state=initial_state, matrix=true_matrix, state_space=state_space,
                                   n_samples=n_samples)
 
-    benchmark_source(MC=MC,state_space=state_space,
+    benchmark_dynamic(MC=MC,state_space=state_space,
                      size_smallest_subsample=size_smallest_subsample,
                      size_largest_subsample=size_largest_subsample,
                      step_of_subsampling=step_of_subsampling,

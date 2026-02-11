@@ -36,7 +36,7 @@ def parse_args():
                         help="Choose example matrix (1-4) among those presented in the article")
     parser.add_argument("--n_samples", type=int, default=10000)
     parser.add_argument("--initial_state", type=str, default="A")
-
+    parser.add_argument("--state_space", type=str, default= ["A","B", "C"])
     # ===== AFICS mode arguments =====
     parser.add_argument("--rmsd_file", type=str)
 
@@ -83,7 +83,7 @@ def main():
             state_space=args.state_space,
             initial_state=args.initial_state,
             adress_results=args.adress_results,
-            size_smallest_subample=args.size_smallest_subsample,
+            size_smallest_subsample=args.size_smallest_subsample,
             size_largest_subsample=args.n_samples,
             step_of_subsampling=args.step_of_subsampling,
             n_samples=args.n_samples,
