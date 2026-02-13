@@ -138,7 +138,17 @@ def main():
     mc = markovchain.MarkovChain()
     for state in trajectory: 
         mc.next_state(state)
-    
+
+    print("Proportion of states visited:")
+
+    proportions_states = mc.proportions_states()
+    print(proportions_states)
+
+    if np.isclose( proportions_states.sum(),1):
+        print("The proportions are normalized, as expected")
+    else:
+        raise ValueError("The proportions of states do not sum to 1")
+
     state_space = list(mc.state_space)
     print(f"🔹 États ({len(state_space)}): {state_space}")
 

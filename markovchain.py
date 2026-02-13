@@ -231,6 +231,12 @@ class MarkovChain():
         trajectory = rmsd_df['Best geometry'].tolist()
         for element in trajectory:
             self.next_state(element)
+    def proportions_states(self):
+        counter = pd.Series(0, index=self.state_space)
+        for state in self.states:
+            counter[state]+=1
+        total=len(self.states)
+        return counter/total
 
 def compute_phi_from_MLE(A, size_chain):
     """
